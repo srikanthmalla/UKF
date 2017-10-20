@@ -27,6 +27,9 @@ public:
 
   ///* state covariance matrix
   MatrixXd P_;
+  
+  ///* Measurment covariance matrix
+  MatrixXd R_lidar_,R_radar_;
 
   ///* predicted sigma points matrix
   MatrixXd Xsig_pred_;
@@ -63,11 +66,14 @@ public:
 
   ///* Augmented state dimension
   int n_aug_;
-
+  
+  int n_sig_;
   ///* Sigma point spreading parameter
   double lambda_;
 
+  double NIS_radar_;
 
+  double NIS_lidar_;
   /**
    * Constructor
    */
@@ -78,11 +84,16 @@ public:
    */
   virtual ~UKF();
 
+  // normalize the angle
+  void NormAng(double& ang);
+  
+  //updates the state mean and covariance 
+  void UpdateUKF(MeasurementPackage meas_package, MatrixXd Zsig, int n_z);
   /**
    * ProcessMeasurement
    * @param meas_package The latest measurement data of either radar or laser
    */
-  void ProcessMeasurement(MeasurementPackage meas_package);
+  void ProcessMeasurement(MeasurementPackage measurement_pack);
 
   /**
    * Prediction Predicts sigma points, the state, and the state covariance
@@ -95,13 +106,13 @@ public:
    * Updates the state and the state covariance matrix using a laser measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateLidar(MeasurementPackage meas_package);
+  void UpdateLidar(MeasurementPackage measurement_pack);
 
   /**
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateRadar(MeasurementPackage meas_package);
+  void UpdateRadar(MeasurementPackage measurement_pack);
 };
 
 #endif /* UKF_H */
