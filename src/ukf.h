@@ -73,7 +73,7 @@ public:
 
   double NIS_radar_;
 
-  double NIS_lidar_;
+  double NIS_laser_;
   /**
    * Constructor
    */
