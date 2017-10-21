@@ -85,8 +85,8 @@ public:
   virtual ~UKF();
 
   // normalize the angle
-  void NormAng(double& ang);
-  
+  // void NormAng(double& ang);
+  void NormAng(double *ang);
   //updates the state mean and covariance 
   void UpdateUKF(MeasurementPackage meas_package, MatrixXd Zsig, int n_z);
   /**

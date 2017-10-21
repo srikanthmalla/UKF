@@ -25,10 +25,10 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 1.5;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 0.57;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -70,10 +70,16 @@ UKF::UKF() {
 UKF::~UKF() {}
 
 //normalizing angle
-void UKF::NormAng(double& ang){
-  if (ang>M_PI) ang-=2.0*M_PI;
-  if (ang<M_PI) ang+=2.0*M_PI;
+// void UKF::NormAng(double& ang){
+//   if (ang>M_PI) ang-=2.0*M_PI;
+//   if (ang<M_PI) ang+=2.0*M_PI;
+// }
+void UKF::NormAng(double *ang) {
+    while (*ang > M_PI) *ang -= 2. * M_PI;
+    while (*ang < -M_PI) *ang += 2. * M_PI;
 }
+
+
 void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   //initializing state with first measurement 
   if (!is_initialized_){
@@ -99,6 +105,7 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
     x_<<px,py,v,0,0;
     time_us_=measurement_pack.timestamp_;
     is_initialized_=true;
+    return;
   }
   else{
     double dt=(measurement_pack.timestamp_-time_us_)/1000000.0;
@@ -113,10 +120,7 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement_pack) {
   }
 }
 
-/**
- * Predicts sigma points, the state, and the state covariance matrix.
- * @param {double} delta_t the change in time (in seconds) between the last
- */
+//this is fine
 void UKF::Prediction(double dt) {
   double dt_2=dt*dt;
   VectorXd x_aug=VectorXd(n_aug_);
@@ -147,7 +151,7 @@ void UKF::Prediction(double dt) {
     double nu_a=Xsig_aug(5,i);
     double nu_yawdd=Xsig_aug(6,i);  
     double px_p,py_p;
-    double arg= yaw+yaw*dt;
+    double arg= yaw+ (yawd*dt);
     if (fabs(yawd)>0.001){
       px_p=px + (v/yawd)*(sin(arg)-sin(yaw));
       py_p=py + (v/yawd)*(cos(yaw)-cos(arg));
@@ -177,9 +181,9 @@ void UKF::Prediction(double dt) {
   //predicting state covariance using sigma points and weights
   P_.fill(0.0);
   for (int i=0;i<n_sig_;i++){
-    VectorXd x_diff=Xsig_pred_.col(i)=x_;
-    NormAng(x_diff(3));
-    P_=P_+weights_(i)*x_diff*x_diff.transpose();
+    VectorXd x_diff=Xsig_pred_.col(i)-x_;
+    NormAng(&x_diff(3));
+    P_=P_ + weights_(i)*x_diff*x_diff.transpose();
   }
 }
 
@@ -217,7 +221,7 @@ void UKF::UpdateUKF(MeasurementPackage measurement_pack, MatrixXd Zsig, int n_z)
   S.fill(0.0);
   for (int i=0; i< n_sig_;i++){
     VectorXd z_diff = Zsig.col(i) - z_pred;
-    NormAng(z_diff(1));
+    NormAng(&z_diff(1));
     S=S+weights_(i)*z_diff*z_diff.transpose();
   }
   //add measurement noise covariance matrix
@@ -235,10 +239,10 @@ void UKF::UpdateUKF(MeasurementPackage measurement_pack, MatrixXd Zsig, int n_z)
   for(int i=0;i< n_sig_; i++){
     VectorXd z_diff= Zsig.col(i)-z_pred;
     if(measurement_pack.sensor_type_ ==MeasurementPackage::RADAR){
-      NormAng(z_diff(1));
+      NormAng(&z_diff(1));
     }
     VectorXd x_diff= Xsig_pred_.col(i)-x_;
-    NormAng(x_diff(3));
+    NormAng(&x_diff(3));
     Tc=Tc+weights_(i)*x_diff*z_diff.transpose();
   }
   //measurement
@@ -247,7 +251,7 @@ void UKF::UpdateUKF(MeasurementPackage measurement_pack, MatrixXd Zsig, int n_z)
   MatrixXd K= Tc*S.inverse();
   VectorXd z_diff = z-z_pred;
   if (measurement_pack.sensor_type_ == MeasurementPackage:: RADAR){
-    NormAng(z_diff(1));
+    NormAng(&z_diff(1));
   }
   //update mean and covariance
   x_ = x_ + K * z_diff;
@@ -259,5 +263,6 @@ void UKF::UpdateUKF(MeasurementPackage measurement_pack, MatrixXd Zsig, int n_z)
   else if(measurement_pack.sensor_type_ == MeasurementPackage::LASER){
     NIS_laser_= z.transpose()*S.inverse()*z;
   }
-
+  cout<<"state:"<<x_<<"\n";
+  cout<<"covariance:"<<P_<<"\n";
 }
