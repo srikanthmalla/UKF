@@ -17,10 +17,10 @@ Once the install for uWebSocketIO is complete, the main program can be built and
 
 ## Basic Build Instructions
 
-1. Clone this repo.
+1. Clone this repo. Either run `./start.sh` from `/src` folder or follow the below steps.
 2. Make a build directory: `mkdir build && cd build`
 3. Compile: `cmake .. && make`
-4. Run it: `./UnscentedKF` Previous versions use i/o from text files.  The current state uses i/o
+4. Run it: `./UnscentedKF` 
 from the simulator.
 
 ![alt text](ukf_flow.png)
